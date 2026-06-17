@@ -4,15 +4,17 @@
 ### AnyKernel setup
 # global properties
 properties() { '
-kernel.string=Kraken Ω Kernel by @raphakk
+kernel.string=Kraken
+kernel.revision=5.4
+kernel.made=Akire rs
+anykernel3.made=osm0sis @ xda-developers
+kernel.compiler=WeebX Clang 20.0
+message.word=Thank you for install Kraken
 do.devicecheck=1
-do.modules=1
-do.systemless=1
 do.cleanup=1
-do.cleanuponabort=0
 device.name1=redwood
 device.name2=redwoodin
-supported.versions=11.0-18.0
+supported.versions=12.0-16.0
 supported.patchlevels=
 supported.vendorpatchlevels=
 '; } # end properties
