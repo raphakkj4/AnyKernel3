@@ -48,6 +48,109 @@ PATCH_VBMETA_FLAG=auto;
 # boot install
 dump_boot; # use split_boot to skip ramdisk unpack, e.g. for devices with init_boot ramdisk
 
+# F2FS optimizations
+ui_print "- Checking filesystem configuration...";
+
+# Method 1: Check if kernel has F2FS support via sysfs
+if ls -d /sys/fs/f2fs* 2>/dev/null | head -1 | grep -q f2fs; then
+    ui_print "- Kernel has F2FS support";
+    
+    # Try to detect actual userdata filesystem
+    USERDATA_FS=""
+    USERDATA_BLOCK="/dev/block/bootdevice/by-name/userdata"
+    
+    # Try multiple detection methods
+    if [ -b "$USERDATA_BLOCK" ]; then
+        # Method A: Use blkid
+        if command -v blkid >/dev/null 2>&1; then
+            USERDATA_FS=$(blkid -s TYPE -o value "$USERDATA_BLOCK" 2>/dev/null)
+        fi
+        
+        # Method B: Check fstab
+        if [ -z "$USERDATA_FS" ] && [ -f "/etc/recovery.fstab" ]; then
+            USERDATA_FS=$(grep -i "userdata" /etc/recovery.fstab 2>/dev/null | grep -o "f2fs" || true)
+        fi
+        
+        # Method C: Check via tune2fs if available
+        if [ -z "$USERDATA_FS" ] && command -v tune2fs >/dev/null 2>&1; then
+            USERDATA_FS=$(tune2fs -l "$USERDATA_BLOCK" 2>/dev/null | grep -i "Filesystem" | awk '{print $3}' || true)
+        fi
+    fi
+    
+    ui_print "- Userdata filesystem: ${USERDATA_FS:-Unknown}";
+    
+    # Apply F2FS optimizations if detected or if sysfs exists
+    if [ "$USERDATA_FS" = "f2fs" ] || [ "$USERDATA_FS" = "f2fs_crypt" ] || [ -z "$USERDATA_FS" ]; then
+        ui_print "- Applying F2FS optimizations...";
+        
+        # Basic F2FS optimizations
+        for f2fs_dir in /sys/fs/f2fs*; do
+            if [ -d "$f2fs_dir" ]; then
+                ui_print "  Optimizing: $(basename $f2fs_dir)";
+                
+                # ATGC (Auto Task GC) - disable for better performance
+                [ -f "$f2fs_dir/atgc" ] && echo 0 > "$f2fs_dir/atgc" 2>/dev/null;
+                
+                # Inline crypto support
+                [ -f "$f2fs_dir/inlinecrypt" ] && echo 1 > "$f2fs_dir/inlinecrypt" 2>/dev/null;
+                
+                # Discard/trim support
+                [ -f "$f2fs_dir/discard" ] && echo "1" > "$f2fs_dir/discard" 2>/dev/null;
+                
+                # TCP (Tokenized Cleaning Policy) - set to foreground
+                [ -f "$f2fs_dir/tc" ] && echo 1 > "$f2fs_dir/tc" 2>/dev/null;
+                
+                # Mode - adaptive for better UX
+                [ -f "$f2fs_dir/mode" ] && echo "adaptive" > "$f2fs_dir/mode" 2>/dev/null;
+                
+                # IO statistics
+                [ -f "$f2fs_dir/iostat_enable" ] && echo 1 > "$f2fs_dir/iostat_enable" 2>/dev/null;
+            fi;
+        done;
+        
+        # Extension list optimization
+        ui_print "- Optimizing F2FS extension lists...";
+        
+        for list_path in $(find /sys/fs/f2fs* -name extension_list 2>/dev/null); do
+            ui_print "  Processing: $(basename $(dirname $list_path))";
+            
+            # Clear existing list first
+            echo "" > "$list_path" 2>/dev/null;
+            
+            # Hot extensions (frequently accessed)
+            for ext in .db .xml .json .apk .dex .vdex .art .oat .odex .so .jar .prop .conf; do
+                echo "[h]$ext" >> "$list_path" 2>/dev/null;
+            done;
+            
+            # Cold extensions (temporary/cache files)
+            for ext in .log .tmp .temp .cache .bak .swp .swo .pid .lock .trash; do
+                echo "[c]$ext" >> "$list_path" 2>/dev/null;
+            done;
+            
+            # Optional: Load from files if they exist
+            if [ -f "$home/f2fs-hot.list" ]; then
+                while read ext; do
+                    [ -z "$ext" ] || [[ "$ext" == \#* ]] && continue;
+                    echo "[h]$ext" >> "$list_path" 2>/dev/null;
+                done < "$home/f2fs-hot.list";
+            fi;
+            
+            if [ -f "$home/f2fs-cold.list" ]; then
+                while read ext; do
+                    [ -z "$ext" ] || [[ "$ext" == \#* ]] && continue;
+                    echo "[c]$ext" >> "$list_path" 2>/dev/null;
+                done < "$home/f2fs-cold.list";
+            fi;
+        done;
+        
+        ui_print "- F2FS optimization complete!";
+    else
+        ui_print "- Userdata is not F2FS ($USERDATA_FS), skipping F2FS optimizations";
+    fi;
+else
+    ui_print "- Kernel doesn't have F2FS support, skipping F2FS optimizations";
+fi;
+
 write_boot; # use flash_boot to skip ramdisk repack, e.g. for devices with init_boot ramdisk
 ## end boot install
 
