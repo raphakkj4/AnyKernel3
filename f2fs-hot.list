@@ -1,0 +1,155 @@
+# Database files (CRITICAL for app performance)
+.db
+.db-shm
+.db-wal
+.db-journal
+.sqlite
+.sqlite-shm
+.sqlite-wal
+
+# Configuration files (Frequently accessed)
+.xml
+.json
+.properties
+.yml
+.yaml
+.toml
+.conf
+.config
+.ini
+.cfg
+.rc
+.prop
+.env
+
+# Android system files
+.so
+.vdex
+.odex
+.oat
+.art
+.dex
+.cdex
+.qdex
+.jar
+.apk
+.aab
+
+# Application data
+.dat
+.data
+.bin
+.binary
+.bytes
+.cache
+.cache2
+.cache3
+
+# Game saves and critical data
+.sav
+.save
+.gamesave
+.state
+.progress
+.profile
+
+# Social media databases (WhatsApp, Telegram, etc.)
+.crypt12
+.crypt14
+.crypt
+.thumb
+.thumbdata
+.thumbindex
+
+# Web and browser data
+.cookie
+.localstorage
+.sessionstorage
+.indexeddb
+.webstorage
+
+# Development files
+.java
+.kt
+.cpp
+.c
+.h
+.py
+.js
+.ts
+.dart
+.rs
+.go
+
+# Scripts and automation
+.sh
+.bash
+.zsh
+.pl
+.lua
+.rb
+.php
+
+# Build and compilation
+.o
+.ko
+.elf
+.a
+.lib
+.dll
+.dylib
+.dtb
+.dts
+.dtsi
+
+# System files
+.pem
+.key
+.crt
+.cer
+.p12
+.pfx
+.keystore
+.jks
+
+# Fonts and UI resources
+.ttf
+.otf
+.woff
+.woff2
+.eot
+.svg
+
+# Virtual machine and container
+.vmdk
+.vdi
+.vhd
+.qcow2
+.ova
+.ovf
+
+# Machine learning
+.pt
+.pth
+.h5
+.pb
+.tflite
+.onnx
+
+# Archives that are frequently accessed
+.gz
+.xz
+.zst
+.lz4
+.bz2
+.7z
+.rar
+.zip
+
+# Documents that are edited frequently
+.docx
+.xlsx
+.pptx
+.odt
+.ods
+.odp
