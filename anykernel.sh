@@ -14,7 +14,7 @@ do.devicecheck=1
 do.cleanup=1
 device.name1=redwood
 device.name2=redwoodin
-supported.versions=12.0-16.0
+supported.versions=12.0-17.0
 supported.patchlevels=
 supported.vendorpatchlevels=
 '; } # end properties
