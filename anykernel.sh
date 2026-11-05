@@ -1,111 +1,64 @@
-### AnyKernel3 Ramdisk Mod Script
-## osm0sis @ xda-developers
+### AnyKernel3 installer for Kraken 6.12 on Xiaomi redwood
 
-### AnyKernel setup
-# global properties
 properties() { '
-kernel.string=Kraken Ω Kernel by @raphakk
+kernel.string=Kraken 6.12 for redwood
 do.devicecheck=1
-do.modules=1
-do.systemless=1
+do.modules=0
+do.systemless=0
 do.cleanup=1
 do.cleanuponabort=0
 device.name1=redwood
 device.name2=redwoodin
-supported.versions=11.0-18.0
+supported.versions=16-17
 supported.patchlevels=
 supported.vendorpatchlevels=
-'; } # end properties
+'; }
 
-### AnyKernel install
-## boot files attributes
 boot_attributes() {
-set_perm_recursive 0 0 755 644 $RAMDISK/*;
-set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
-} # end attributes
+  set_perm_recursive 0 0 755 644 "$RAMDISK"/*;
+  set_perm_recursive 0 0 750 750 "$RAMDISK"/init* "$RAMDISK"/sbin;
+}
 
-# begin passthrough patch
-passthrough() {
-if [ ! "$(getprop persist.sys.fuse.passthrough.enable)" ]; then
- ui_print "Remounting /system as rw..."
- $home/tools/busybox mount -o rw,remount /system
- ui_print "Patching system's build prop for FUSE Passthrough..."
- patch_prop /system/build.prop "persist.sys.fuse.passthrough.enable" "true"
-fi
-} # end passthrough patch
+vendor_boot_attributes() {
+  set_perm_recursive 0 0 755 644 "$RAMDISK"/*;
+  set_perm_recursive 0 0 750 750 "$RAMDISK"/init* "$RAMDISK"/sbin;
+}
 
-## boot shell variables
 BLOCK=boot;
 IS_SLOT_DEVICE=1;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
-# import functions/variables and setup patching - see for reference (DO NOT REMOVE)
-. tools/ak3-core.sh && passthrough;
+. tools/ak3-core.sh;
 
-# boot install
-dump_boot; # use split_boot to skip ramdisk unpack, e.g. for devices with init_boot ramdisk
+ui_print " " "Kraken 6.12 redwood installer";
+ui_print "Patching the active boot slot...";
+cp -f "$AKHOME/payload/Image" "$AKHOME/Image" || abort "Missing kernel Image";
+dump_boot;
+write_boot;
+rm -f "$AKHOME/Image";
 
-write_boot; # use flash_boot to skip ramdisk repack, e.g. for devices with init_boot ramdisk
-## end boot install
-
-## init_boot files attributes
-#init_boot_attributes() {
-#set_perm_recursive 0 0 755 644 $RAMDISK/*;
-#set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
-#} # end attributes
-
-# init_boot shell variables
-#BLOCK=init_boot;
-#IS_SLOT_DEVICE=1;
-#RAMDISK_COMPRESSION=auto;
-#PATCH_VBMETA_FLAG=auto;
-
-# reset for init_boot patching
-#reset_ak;
-
-# init_boot install
-#dump_boot; # unpack ramdisk since it is the new first stage init ramdisk where overlay.d must go
-
-#write_boot;
-## end init_boot install
-
-## vendor_kernel_boot shell variables
-#BLOCK=vendor_kernel_boot;
-#IS_SLOT_DEVICE=1;
-#RAMDISK_COMPRESSION=auto;
-#PATCH_VBMETA_FLAG=auto;
-
-# reset for vendor_kernel_boot patching
-#reset_ak;
-
-# vendor_kernel_boot install
-#split_boot; # skip unpack/repack ramdisk, e.g. for dtb on devices with hdr v4 and vendor_kernel_boot
-
-#flash_boot;
-## end vendor_kernel_boot install
-
-## vendor_boot files attributes
-vendor_boot_attributes() {
-set_perm_recursive 0 0 755 644 $RAMDISK/*;
-set_perm_recursive 0 0 750 750 $RAMDISK/init* $RAMDISK/sbin;
-}
-# end attributes
-
-## vendor_boot shell variables
 BLOCK=vendor_boot;
 IS_SLOT_DEVICE=1;
 RAMDISK_COMPRESSION=auto;
 PATCH_VBMETA_FLAG=auto;
 
-# reset for vendor_boot patching
 reset_ak;
 
-# vendor_boot install
-#dump_boot; # use split_boot to skip ramdisk unpack, e.g. for dtb on devices with hdr v4 but no vendor_kernel_boot
-split_boot;
+ui_print "Patching vendor_boot DTB and matching 6.12 modules...";
+dump_boot;
 
-#write_boot; # use flash_boot to skip ramdisk repack, e.g. for dtb on devices with hdr v4 but no vendor_kernel_boot
-flash_boot;
+rm -rf "$RAMDISK/lib/modules";
+mkdir -p "$RAMDISK/lib/modules" || abort "Cannot create vendor ramdisk module directory";
+cp -af "$AKHOME/payload/modules"/* "$RAMDISK/lib/modules/" || abort "Cannot install 6.12 modules";
+set_perm_recursive 0 0 755 644 "$RAMDISK/lib/modules";
 
-## end vendor_boot install
+cp -f "$AKHOME/payload/dtb" "$AKHOME/dtb" || abort "Missing redwood DTB";
+cp -f "$AKHOME/payload/dtbo.img" "$AKHOME/dtbo.img" || abort "Missing redwood DTBO image";
+
+write_boot;
+
+module_count=$(wc -l < "$AKHOME/payload/modules/modules.load" 2>/dev/null);
+[ "$module_count" ] || module_count="matching";
+ui_print " " "Installed Image, DTB, DTBO and $module_count modules.";
+ui_print "If boot fails, restore boot, vendor_boot and dtbo from the same slot.";
