@@ -54,16 +54,11 @@ cp -af "$AKHOME/payload/modules"/* "$RAMDISK/lib/modules/" || abort "Cannot inst
 set_perm_recursive 0 0 755 644 "$RAMDISK/lib/modules";
 
 cp -f "$AKHOME/payload/dtb" "$AKHOME/dtb" || abort "Missing redwood DTB";
-if [ -f "$AKHOME/payload/dtbo.img" ]; then
-  cp -f "$AKHOME/payload/dtbo.img" "$AKHOME/dtbo.img" || abort "Cannot stage redwood DTBO image";
-  ui_print "Installing the package DTBO (experimental mode)...";
-else
-  ui_print "Preserving the ROM DTBO for display compatibility.";
-fi
+cp -f "$AKHOME/payload/dtbo.img" "$AKHOME/dtbo.img" || abort "Missing redwood DTBO image";
 
 write_boot;
 
 module_count=$(wc -l < "$AKHOME/payload/modules/modules.load" 2>/dev/null);
 [ "$module_count" ] || module_count="matching";
-ui_print " " "Installed Image, DTB and $module_count modules.";
-ui_print "If boot fails, restore boot and vendor_boot from the same slot.";
+ui_print " " "Installed Image, DTB, DTBO and $module_count modules.";
+ui_print "If boot fails, restore boot, vendor_boot and dtbo from the same slot.";
